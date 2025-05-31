@@ -6,12 +6,15 @@
     <title>To-Do List App</title>
     <meta name="description" content="" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="stylesheet" href="style.css?v=1.1" />
+    <link rel="stylesheet" href="style.css?v=1.4" />
   </head>
   <body>
     <div class="container">
-      <div class="sidebar" id="sidebar"></div>
-      <div class="todo-app">
+      <div class="sprite-bar">
+        <div class="sprite-visual">
+          <div class="player-sprite" id="player-sprite"></div>
+        </div>
+        <button id="change-sprite" class="sprite-btn">></button>
         <div class="leveling">
           <span id="level">Level: 1</span>
           <div class="xp-bar">
@@ -19,52 +22,44 @@
           </div>
           <span class="xp-text" id="xp">XP: 0/100</span>
         </div>
-        <h2>To-Do List <img src="images/ico.png" alt="icon" /></h2>
-        <div class="row" id="input-row">
-          <input
-            maxlength="200"
-            type="text"
-            id="input-box"
-            placeholder="Add your text"
-          />
-          <select
-            id="difficulty-select"
-            style="margin-right: 8px"
-            class="difficulty-select"
-          >
-            <option value="easy">Easy</option>
-            <option value="medium">Medium</option>
-            <option value="hard">Hard</option>
-          </select>
-          <button onclick="addTask()">Add</button>
-        </div>
-        <button id="back-to-current" style="display: none; margin-bottom: 16px">
-          Back to Current List
-        </button>
-        <div id="toast" class="toast"></div>
-        <ul id="list-container"></ul>
       </div>
+      <div class="app-wrapper">
+        <div class="sidebar" id="sidebar">
+          <div class="level-tabs" id="level-tabs"></div>
+        </div>
+        <div class="todo-app">
+          <h2>To-Do List <img src="images/ico.png" alt="icon" /></h2>
+          <div class="row" id="input-row">
+            <input
+              maxlength="200"
+              type="text"
+              id="input-box"
+              placeholder="Add your text"
+            />
+            <select
+              id="difficulty-select"
+              style="margin-right: 8px"
+              class="difficulty-select"
+            >
+              <option value="easy">Easy</option>
+              <option value="medium">Medium</option>
+              <option value="hard">Hard</option>
+            </select>
+            <button onclick="addTask()">Add</button>
+          </div>
+          <button
+            id="back-to-current"
+            style="display: none; margin-bottom: 16px"
+          >
+            Back to Current List
+          </button>
+          <div id="toast" class="toast"></div>
+          <ul id="list-container"></ul>
+        </div>
+      </div>
+      <button id="clear-storage-btn">Clear All Data</button>
     </div>
-    <button
-      id="clear-storage-btn"
-      style="
-        position: fixed;
-        bottom: 32px;
-        right: 32px;
-        z-index: 2000;
-        padding: 12px 20px;
-        border-radius: 8px;
-        background: #d32f2f;
-        color: #fff;
-        border: none;
-        cursor: pointer;
-        font-size: 16px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-      "
-    >
-      Clear All Data
-    </button>
 
-    <script src="script.js?v=1.1"></script>
+    <script src="script.js?v=1.4"></script>
   </body>
 </html>

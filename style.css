@@ -12,10 +12,11 @@
   width: 100%;
   min-height: 100vh;
   background: #2c2137;
-  padding: 20px;
+  padding: 20px 20px 100px 20px;
   display: flex;
-  justify-content: center;
-  align-items: flex-start;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
   background-image: linear-gradient(
       rgba(44, 33, 55, 0.9),
       rgba(44, 33, 55, 0.9)
@@ -33,7 +34,7 @@
   width: 100%;
   max-width: 480px;
   background: #4a3f5c;
-  margin: 40px auto;
+  margin: 0;
   padding: 32px;
   border: 4px solid #8b7b9e;
   box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.2);
@@ -249,9 +250,16 @@ ul li span:hover {
 
 // LEVELING
 .leveling {
-  margin-bottom: 32px;
+  margin-top: 16px;
   text-align: center;
+  width: 100%;
+  background: #4a3f5c;
+  padding: 16px;
+  border: 4px solid #8b7b9e;
+  border-radius: 12px;
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.2);
 }
+
 .xp-bar {
   width: 100%;
   background: #3a2f4c;
@@ -260,7 +268,9 @@ ul li span:hover {
   margin: 8px 0;
   overflow: hidden;
   image-rendering: pixelated;
+  border-radius: 8px;
 }
+
 #xp-progress {
   height: 100%;
   width: 0%;
@@ -269,16 +279,141 @@ ul li span:hover {
   image-rendering: pixelated;
 }
 
-.sidebar {
-  width: 120px;
-  border-radius: 12px;
-  margin-right: 24px;
-  padding: 16px 0;
+#level,
+.xp-text {
+  color: #ffd700;
+  font-size: 12px;
+  text-shadow: 2px 2px 0 #000;
+}
+
+.sprite-bar {
   display: flex;
   flex-direction: column;
   align-items: center;
-  min-height: 300px;
+  margin: 0 auto 32px auto;
+  padding: 12px 0 20px 0;
+  background: none;
+  width: 100%;
+  max-width: 300px;
 }
+
+.sprite-visual {
+  width: 96px;
+  height: 96px;
+  background: #2c2137;
+  border: none;
+  border-radius: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: none;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.player-sprite {
+  width: 96px;
+  height: 96px;
+  background-size: 384px 96px;
+  image-rendering: pixelated;
+  animation: spriteAnimation 1.2s steps(4) infinite;
+  border: none;
+  border-radius: 8px;
+  background-color: #2c2137;
+  background-repeat: no-repeat;
+  background-position: 0px 0px;
+  display: block;
+}
+
+.sprite-btn {
+  background: #4a3f5c;
+  color: #ffd700;
+  border: 2px solid #8b7b9e;
+  padding: 8px 20px;
+  font-size: 12px;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.1s;
+  text-align: center;
+  margin-top: 0;
+  width: 140px;
+}
+
+.sprite-btn:hover {
+  background: #ffd700;
+  color: #2c2137;
+}
+
+@keyframes spriteAnimation {
+  from {
+    background-position: 0px 0px;
+  }
+  to {
+    background-position: -768px 0px;
+  }
+}
+
+/* Sprite animations */
+@keyframes idle {
+  from {
+    background-position: 0px 0px;
+  }
+  to {
+    background-position: -256px 0px;
+  }
+}
+
+@keyframes happy {
+  from {
+    background-position: 0px -64px;
+  }
+  to {
+    background-position: -256px -64px;
+  }
+}
+
+@keyframes sad {
+  from {
+    background-position: 0px -128px;
+  }
+  to {
+    background-position: -256px -128px;
+  }
+}
+
+/* Remove old sprite themes */
+.sprite-knight,
+.sprite-wizard,
+.sprite-rogue,
+.sprite-warrior {
+  display: none;
+}
+
+/* Update sidebar styles */
+.sidebar {
+  width: 180px;
+  background: #3a2f4c;
+  border: 2px solid #8b7b9e;
+  border-radius: 12px;
+  margin-right: 24px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 300px;
+  position: relative;
+  z-index: 1;
+}
+
+.level-tabs {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px 0;
+  position: relative;
+  z-index: 1;
+}
+
 .level-tab {
   background: black;
   border: none;
@@ -342,4 +477,42 @@ ul li span:hover {
 
 .difficulty-select option[value="hard"] {
   background: #d32f2f;
+}
+
+/* Add a wrapper for the sidebar and todo-app */
+.app-wrapper {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  max-width: 900px;
+  justify-content: center;
+  align-items: flex-start;
+  margin-top: 40px;
+}
+
+/* Remove old .sprite-container styles if present */
+.sprite-container {
+  display: none !important;
+}
+
+#clear-storage-btn {
+  position: absolute;
+  bottom: 32px;
+  right: 32px;
+  z-index: 2000;
+  padding: 12px 20px;
+  border-radius: 8px;
+  background: #d32f2f;
+  color: #fff;
+  border: 2px solid #000;
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.2);
+  transition: all 0.1s ease;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+#clear-storage-btn:hover {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.2);
+  background: #b71c1c;
 }
