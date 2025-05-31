@@ -18,7 +18,7 @@ concurrency:
 jobs:
   deploy:
     environment:
-      name: github-pages
+      name: XP-List
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
@@ -29,7 +29,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: '.'
+          path: "."
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
