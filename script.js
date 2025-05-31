@@ -113,7 +113,7 @@ function saveData() {
         .replace("×", "")
         .trim(),
       checked: li.classList.contains("checked"),
-      difficulty: diffSpan ? diffSpan.textContent.toLowerCase() : "easy",
+      difficulty: diffSpan ? diffSpan.classList[1] : "easy",
     });
   });
   localStorage.setItem("tasks", JSON.stringify(tasks));
@@ -140,7 +140,7 @@ function getCompletedTasks() {
     tasks.push({
       text: li.childNodes[1]?.textContent.trim() || "",
       checked: true,
-      difficulty: li.querySelector(".difficulty")?.classList[1] || "easy"
+      difficulty: li.querySelector(".difficulty")?.classList[1] || "easy",
     });
   });
   return tasks;
@@ -182,7 +182,9 @@ function showLevelHistory(level) {
   listContainer.innerHTML = "";
   tasks.forEach((task) => {
     let li = document.createElement("li");
-    li.innerHTML = `<span class="difficulty ${task.difficulty || 'easy'}"></span> ${task.text}`;
+    li.innerHTML = `<span class="difficulty ${
+      task.difficulty || "easy"
+    }"></span> ${task.text}`;
     if (task.checked) li.classList.add("checked");
     li.style.pointerEvents = "none";
     li.style.opacity = "0.7";
