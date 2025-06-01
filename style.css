@@ -8,6 +8,17 @@
   image-rendering: pixelated;
 }
 
+html,
+body {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  background: #2c2137;
+  min-height: 100vh;
+}
+
 .container {
   width: 100%;
   min-height: 100vh;
@@ -519,129 +530,206 @@ ul li span:hover {
 
 // Screens
 @media screen and (max-width: 768px) {
-  .app-wrapper {
-    flex-direction: column;
-    align-items: center;
-    padding: 0 16px;
-  }
-
-  .sidebar {
+  html,
+  body {
     width: 100%;
-    margin-right: 0;
-    margin-bottom: 24px;
-    min-height: auto;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    background: #2c2137;
+    min-height: 100vh;
   }
-
+  .container {
+    width: 100%;
+    max-width: 100%;
+    min-height: 100vh;
+    background: #2c2137;
+    padding: 12px 0 80px 0;
+  }
+  .app-wrapper {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+    gap: 20px;
+  }
   .todo-app {
     width: 100%;
-    padding: 24px 16px;
-    margin: 0;
-  }
-
-  .sprite-bar {
     max-width: 100%;
-    padding: 12px 16px;
+    margin: 0;
+    padding: 20px 8px;
   }
-
+  .sprite-bar {
+    width: 100%;
+    max-width: 100%;
+    margin: 0 0 20px 0;
+    padding: 16px 0;
+    border-radius: 0;
+    box-sizing: border-box;
+  }
+  .sidebar {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    min-width: 0;
+  }
   .sprite-visual {
-    width: 80px;
-    height: 80px;
+    width: 96px;
+    height: 96px;
+    margin: 0 auto 12px auto;
   }
-
   .player-sprite {
-    width: 80px;
-    height: 80px;
+    width: 96px;
+    height: 96px;
   }
-
+  .sprite-btn {
+    width: 140px;
+    margin: 0 auto;
+  }
+  .leveling {
+    margin-top: 12px;
+    padding: 12px;
+  }
+  .level-tabs {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 8px;
+    padding: 12px;
+  }
+  .level-tab {
+    font-size: 12px;
+    padding: 6px 8px;
+  }
   .row {
-    flex-wrap: wrap;
+    flex-direction: column;
     gap: 12px;
+    padding: 12px;
   }
-
   input {
     width: 100%;
     order: 1;
   }
-
   .difficulty-select {
-    order: 2;
-    flex: 1;
-  }
-
-  button {
-    order: 3;
     width: 100%;
+    order: 2;
   }
-
+  button {
+    width: 100%;
+    order: 3;
+  }
   #clear-storage-btn {
     position: fixed;
     bottom: 16px;
     right: 16px;
     padding: 8px 16px;
     font-size: 10px;
+    z-index: 1000;
   }
-
-  .leveling {
+  .toast {
+    width: 90%;
+    max-width: 300px;
+    font-size: 12px;
     padding: 12px;
-  }
-
-  #level,
-  .xp-text {
-    font-size: 10px;
-  }
-
-  .xp-bar {
-    height: 12px;
   }
 }
 
 @media screen and (max-width: 480px) {
   .container {
-    padding: 12px 12px 80px 12px;
+    width: 100%;
+    max-width: 100%;
+    min-height: 100vh;
+    background: #2c2137;
+    padding: 8px 0 80px 0;
   }
-
-  .todo-app h2 {
-    font-size: 16px;
-    margin-bottom: 24px;
+  .app-wrapper {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
   }
-
-  .todo-app h2 img {
-    width: 20px;
-    margin-left: 8px;
+  .todo-app {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 12px 4px;
   }
-
-  ul li {
-    font-size: 10px;
-    padding: 10px 10px 10px 36px;
+  .sprite-bar {
+    width: 100%;
+    max-width: 100%;
+    margin: 0 0 16px 0;
+    padding: 12px 0;
+    border-radius: 0;
   }
-
-  ul li::before {
-    height: 20px;
-    width: 20px;
-    left: 8px;
+  .sidebar {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    min-width: 0;
   }
-
-  ul li span {
-    width: 24px;
-    height: 24px;
-    font-size: 14px;
-    line-height: 24px;
+  .sprite-visual {
+    width: 80px;
+    height: 80px;
   }
-
+  .player-sprite {
+    width: 80px;
+    height: 80px;
+  }
   .sprite-btn {
     width: 120px;
     padding: 6px 16px;
     font-size: 10px;
   }
-
+  .todo-app h2 {
+    font-size: 16px;
+    margin-bottom: 20px;
+  }
+  .todo-app h2 img {
+    width: 20px;
+    margin-left: 8px;
+  }
+  .row {
+    padding: 8px;
+    gap: 8px;
+  }
+  input {
+    font-size: 10px;
+    padding: 6px;
+  }
   .difficulty-select {
     font-size: 9px;
     padding: 6px;
   }
-
-  .difficulty {
-    font-size: 8px;
-    padding: 3px 6px;
+  button {
+    font-size: 10px;
+    padding: 6px 12px;
+  }
+  ul li {
+    font-size: 10px;
+    padding: 8px 8px 8px 32px;
+    margin-bottom: 6px;
+  }
+  ul li::before {
+    height: 18px;
+    width: 18px;
+    left: 6px;
+  }
+  ul li span {
+    width: 22px;
+    height: 22px;
+    font-size: 12px;
+    line-height: 22px;
+  }
+  .leveling {
+    padding: 8px;
+  }
+  #level,
+  .xp-text {
+    font-size: 9px;
+  }
+  .xp-bar {
+    height: 10px;
+    margin: 6px 0;
   }
 }
 
@@ -660,7 +748,6 @@ ul li span:hover {
     gap: 8px;
     padding: 12px;
   }
-
   .level-tab {
     font-size: 12px;
     padding: 6px 8px;
