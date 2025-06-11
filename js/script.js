@@ -522,7 +522,12 @@ async function checkAuth() {
     // User is logged in
     if (userInfo) userInfo.style.display = "flex";
     if (authButtons) authButtons.style.display = "none";
-    if (username) username.textContent = user.email;
+    if (username) {
+      // Try to get username from metadata, fallback to email
+      const displayName =
+        user.user_metadata?.username || user.email?.split("@")[0] || "User";
+      username.textContent = displayName;
+    }
 
     // Load user data
     await loadUserData();
