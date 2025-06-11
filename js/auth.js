@@ -1,27 +1,5 @@
 // Wait for environment variables to be loaded
 document.addEventListener("DOMContentLoaded", () => {
-  // Validate Supabase URL
-  if (
-    !window.env.SUPABASE_URL ||
-    window.env.SUPABASE_URL === "YOUR_SUPABASE_URL"
-  ) {
-    console.error(
-      "Invalid Supabase URL. Please check your environment configuration."
-    );
-    return;
-  }
-
-  // Validate Supabase Anon Key
-  if (
-    !window.env.SUPABASE_ANON_KEY ||
-    window.env.SUPABASE_ANON_KEY === "YOUR_SUPABASE_ANON_KEY"
-  ) {
-    console.error(
-      "Invalid Supabase Anon Key. Please check your environment configuration."
-    );
-    return;
-  }
-
   try {
     // Initialize Supabase client
     const supabase = window.supabase.createClient(
@@ -112,7 +90,13 @@ document.addEventListener("DOMContentLoaded", () => {
         data: { user },
       } = await supabase.auth.getUser();
       if (user) {
-        window.location.href = "index.html";
+        // Only redirect if we're on auth pages
+        if (
+          window.location.pathname.includes("login.html") ||
+          window.location.pathname.includes("signup.html")
+        ) {
+          window.location.href = "index.html";
+        }
       }
     }
 

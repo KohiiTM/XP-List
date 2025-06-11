@@ -13,21 +13,13 @@ const authButtons = document.getElementById("auth-buttons");
 const logoutButton = document.getElementById("logout-button");
 const profileLink = document.getElementById("profile-link");
 
-// Initialize Supabase client
-const supabase = window.supabase.createClient(
-  window.env.SUPABASE_URL,
-  window.env.SUPABASE_ANON_KEY
-);
-
-// User data management
+let supabase = null;
 let xp = 0;
 let level = 1;
 let currentSprite = "Idle_1";
 
-// Sprite management
 const sprites = ["Idle_1", "Idle_2", "Idle_3", "Idle_4"];
 
-// Sprite frame data
 const spriteFrameData = {
   Idle_1: {
     frameWidth: 128,
@@ -425,18 +417,63 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Initialize auth state
-  checkAuth();
+  // Load data from localStorage
+  const savedTasks = localStorage.getItem("tasks");
+  if (savedTasks) {
+    const tasks = JSON.parse(savedTasks);
+    listContainer.innerHTML = "";
+    tasks.forEach((task) => {
+      let li = document.createElement("li");
+      li.innerHTML = `<span class="difficulty ${task.difficulty}"></span> ${task.text}`;
+      if (task.checked) li.classList.add("checked");
+      let span = document.createElement("span");
+      span.innerHTML = "\u00d7";
+      li.appendChild(span);
+      listContainer.appendChild(li);
+    });
+  }
+
+  const savedXP = localStorage.getItem("xp");
+  const savedLevel = localStorage.getItem("level");
+  if (savedXP) xp = parseInt(savedXP);
+  if (savedLevel) level = parseInt(savedLevel);
+  updateGamificationUI();
 
   // Add logout button handler
-  const logoutBtn = document.getElementById("logout-button");
-  if (logoutBtn) {
-    logoutBtn.addEventListener("click", handleLogout);
+  if (logoutButton) {
+    logoutButton.addEventListener("click", () => {
+      // Clear all localStorage data
+      localStorage.removeItem("tasks");
+      localStorage.removeItem("xp");
+      localStorage.removeItem("level");
+      localStorage.removeItem("currentSprite");
+      localStorage.removeItem("allLevels");
+      localStorage.removeItem("user");
+
+      // Reset variables
+      xp = 0;
+      level = 1;
+      currentSprite = "Idle_1";
+
+      // Clear the list container
+      if (listContainer) {
+        listContainer.innerHTML = "";
+      }
+
+      // Update UI
+      updateGamificationUI();
+      updateSpriteAnimation(currentSprite);
+
+      // Redirect to login page
+      window.location.href = "login.html";
+    });
   }
 });
 
 // Load user data from Supabase
 async function loadUserData() {
+  if (!supabase) return;
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -481,6 +518,8 @@ async function loadUserData() {
 
 // Save user data to Supabase
 async function saveUserData() {
+  if (!supabase) return;
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -512,8 +551,47 @@ async function saveUserData() {
   }
 }
 
-// Check authentication state
 async function checkAuth() {
+  const isLocalMode =
+    !window.env.SUPABASE_URL ||
+    window.env.SUPABASE_URL === "YOUR_SUPABASE_URL" ||
+    !window.env.SUPABASE_ANON_KEY ||
+    window.env.SUPABASE_ANON_KEY === "YOUR_SUPABASE_ANON_KEY";
+
+  // If in local mode, show the app without auth
+  if (isLocalMode) {
+    if (userInfo) userInfo.style.display = "none";
+    if (authButtons) authButtons.style.display = "none"; // Hide auth buttons in local mode
+    if (logoutButton) logoutButton.style.display = "none";
+
+    // Load tasks from localStorage in local mode
+    const savedTasks = localStorage.getItem("tasks");
+    if (savedTasks) {
+      const tasks = JSON.parse(savedTasks);
+      listContainer.innerHTML = "";
+      tasks.forEach((task) => {
+        let li = document.createElement("li");
+        li.innerHTML = `<span class="difficulty ${task.difficulty}"></span> ${task.text}`;
+        if (task.checked) li.classList.add("checked");
+        let span = document.createElement("span");
+        span.innerHTML = "\u00d7";
+        li.appendChild(span);
+        listContainer.appendChild(li);
+      });
+    }
+
+    // Load XP and level from localStorage
+    const savedXP = localStorage.getItem("xp");
+    const savedLevel = localStorage.getItem("level");
+    if (savedXP) xp = parseInt(savedXP);
+    if (savedLevel) level = parseInt(savedLevel);
+    updateGamificationUI();
+
+    return;
+  }
+
+  if (!supabase) return;
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -524,7 +602,6 @@ async function checkAuth() {
     if (authButtons) authButtons.style.display = "none";
     if (logoutButton) logoutButton.style.display = "block";
     if (username) {
-      // Try to get username from metadata, fallback to email
       const displayName =
         user.user_metadata?.username || user.email?.split("@")[0] || "User";
       username.textContent = displayName;
@@ -538,19 +615,21 @@ async function checkAuth() {
     if (authButtons) authButtons.style.display = "flex";
     if (logoutButton) logoutButton.style.display = "none";
 
-    // Redirect to login if not on auth pages
+    // Only redirect to login if not on auth pages and not in local mode
     const currentPage = window.location.pathname;
     if (
       !currentPage.includes("login.html") &&
-      !currentPage.includes("signup.html")
+      !currentPage.includes("signup.html") &&
+      !isLocalMode
     ) {
       window.location.href = "login.html";
     }
   }
 }
 
-// Handle logout
 async function handleLogout() {
+  if (!supabase) return;
+
   const { error } = await supabase.auth.signOut();
   if (error) {
     showToast("Error logging out");
