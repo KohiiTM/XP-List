@@ -1,3 +1,7 @@
+// Constants
+const baseXP = 100; // Base XP required for level 1
+const baseTaskXP = 10; // Base XP for completing an easy task
+
 // create variables
 const inputBox = document.getElementById("input-box");
 const listContainer = document.getElementById("list-container");
@@ -11,8 +15,8 @@ const profileLink = document.getElementById("profile-link");
 
 // Initialize Supabase client
 const supabase = window.supabase.createClient(
-  "https://wasmcwusvjkoukofxzkg.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indhc21jd3Vzdmprb3Vrb2Z4emtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk1OTMxNTksImV4cCI6MjA2NTE2OTE1OX0.EUj0Rj288tzsq1ZZOu1KfA3QIzipvcfZDKvdGwDJUoc"
+  window.env.SUPABASE_URL,
+  window.env.SUPABASE_ANON_KEY
 );
 
 // User data management
@@ -63,11 +67,14 @@ function xpToLevel(level) {
 }
 
 function updateGamificationUI() {
-  document.getElementById("level").textContent = `Level: ${level}`;
-  document.getElementById("xp").textContent = `XP: ${xp}/${xpToLevel(level)}`;
-  document.getElementById("xp-progress").style.width = `${
-    (xp / xpToLevel(level)) * 100
-  }%`;
+  const levelElement = document.getElementById("level");
+  const xpElement = document.getElementById("xp");
+  const xpProgressElement = document.getElementById("xp-progress");
+
+  if (levelElement) levelElement.textContent = `Level: ${level}`;
+  if (xpElement) xpElement.textContent = `XP: ${xp}/${xpToLevel(level)}`;
+  if (xpProgressElement)
+    xpProgressElement.style.width = `${(xp / xpToLevel(level)) * 100}%`;
 }
 
 function updateSpriteAnimation(sprite) {
@@ -154,8 +161,23 @@ function addXP(amount) {
   updateGamificationUI();
 }
 
+function saveTasks() {
+  const tasks = [];
+  listContainer.querySelectorAll("li").forEach((li) => {
+    tasks.push({
+      text: li.childNodes[1]?.textContent.trim() || "",
+      checked: li.classList.contains("checked"),
+      difficulty: li.querySelector(".difficulty")?.classList[1] || "easy",
+    });
+  });
+  localStorage.setItem("tasks", JSON.stringify(tasks));
+}
+
 function addTask() {
-  const difficulty = document.getElementById("difficulty-select").value;
+  if (!inputBox) return;
+
+  const difficulty =
+    document.getElementById("difficulty-select")?.value || "easy";
   if (inputBox.value === "") {
     showToast("Please enter a task ✎");
   } else {
@@ -167,59 +189,250 @@ function addTask() {
     li.appendChild(span);
   }
   inputBox.value = "";
+  saveTasks();
   saveUserData();
 }
 
-listContainer.addEventListener(
-  "click",
-  function (e) {
-    if (e.target.tagName === "LI") {
-      if (e.target.classList.contains("checked")) {
-        // Unchecking: animate reverse
-        e.target.classList.remove("checked");
-        e.target.classList.add("unchecking");
-        setTimeout(() => {
-          e.target.classList.remove("unchecking");
-        }, 400);
-      } else {
-        e.target.classList.add("checked");
-        // XP modifier based on difficulty and level
-        let diffSpan = e.target.querySelector(".difficulty");
-        let difficulty = diffSpan
-          ? diffSpan.classList.contains("hard")
-            ? "hard"
-            : diffSpan.classList.contains("medium")
-            ? "medium"
-            : "easy"
-          : "easy";
-        let multiplier = 1;
-        if (difficulty === "medium") multiplier = 1.5;
-        if (difficulty === "hard") multiplier = 2;
-        let xpMod = Math.round(
-          baseTaskXP * multiplier * (1 + (level - 1) * 0.1)
-        );
-        addXP(xpMod);
-      }
-      saveUserData();
-    } else if (e.target.tagName === "SPAN") {
-      e.target.parentElement.remove();
-      saveUserData();
-    }
-  },
-  false
-);
-
-function showToast(message) {
-  const toast = document.getElementById("toast");
-  toast.textContent = message;
-  toast.className = "toast show";
-  setTimeout(() => {
-    toast.className = "toast";
-  }, 2500);
+function showLevelHistory(level) {
+  const tasks = getTasksForLevel(level);
+  listContainer.innerHTML = "";
+  tasks.forEach((task) => {
+    let li = document.createElement("li");
+    li.innerHTML = `<span class="difficulty ${
+      task.difficulty || "easy"
+    }"></span> ${task.text}`;
+    if (task.checked) li.classList.add("checked");
+    li.style.pointerEvents = "none";
+    li.style.opacity = "0.7";
+    listContainer.appendChild(li);
+  });
+  document.getElementById("input-row").style.display = "none";
+  document.getElementById("back-to-current").style.display = "block";
 }
 
-document.getElementById("input-box").addEventListener("keydown", function (e) {
-  if (e.key === "Enter") addTask();
+function getTasksForLevel(level) {
+  let allLevels = JSON.parse(localStorage.getItem("allLevels")) || {};
+  return allLevels[level]?.tasks || [];
+}
+
+function showList() {
+  const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+  listContainer.innerHTML = "";
+  tasks.forEach((task) => {
+    let li = document.createElement("li");
+    li.innerHTML = `<span class="difficulty ${
+      task.difficulty || "easy"
+    }"></span> ${task.text}`;
+    if (task.checked) li.classList.add("checked");
+    listContainer.appendChild(li);
+    let span = document.createElement("span");
+    span.innerHTML = "\u00d7";
+    li.appendChild(span);
+  });
+}
+
+function showClearConfirmToast() {
+  const toast = document.getElementById("toast");
+  toast.innerHTML = `
+    <div style="display:flex;flex-direction:column;align-items:center;gap:20px;">
+      <span style="font-size:16px;letter-spacing:0.02em;">Clear all data?</span>
+      <div style="display:flex;gap:12px;">
+        <button id="confirm-clear-btn" style="
+          background: #d32f2f;
+          color: #fff;
+          border: none;
+          border-radius: 999px;
+          padding: 8px 24px;
+          font-size: 15px;
+          cursor: pointer;
+          font-weight: 500;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+          transition: background 0.2s;
+        ">Confirm</button>
+        <button id="cancel-clear-btn" style="
+          background: #f5f5f5;
+          color: #222;
+          border: none;
+          border-radius: 999px;
+          padding: 8px 24px;
+          font-size: 15px;
+          cursor: pointer;
+          font-weight: 500;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+          transition: background 0.2s, color 0.2s;
+        ">Cancel</button>
+      </div>
+    </div>
+  `;
+  toast.className = "toast show";
+  const hideTimeout = setTimeout(() => {
+    toast.className = "toast";
+    toast.innerHTML = "";
+  }, 4000);
+
+  document.getElementById("confirm-clear-btn").onclick = function () {
+    clearTimeout(hideTimeout);
+    localStorage.clear();
+    location.reload();
+  };
+  document.getElementById("cancel-clear-btn").onclick = function () {
+    clearTimeout(hideTimeout);
+    toast.className = "toast";
+    toast.innerHTML = "";
+  };
+}
+
+async function clearAllData() {
+  localStorage.clear();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (user) {
+    const { error } = await supabase
+      .from("user_data")
+      .delete()
+      .eq("user_id", user.id);
+    if (error) {
+      showToast("Error clearing account data.");
+      console.error(error);
+      return;
+    }
+  }
+
+  xp = 0;
+  level = 1;
+  currentSprite = "Idle_1";
+  listContainer.innerHTML = "";
+  updateGamificationUI();
+  updateSpriteAnimation(currentSprite);
+  showToast("All data cleared!");
+}
+
+async function deleteAccount() {
+  if (
+    !confirm(
+      "Are you sure you want to delete your account? This cannot be undone!"
+    )
+  )
+    return;
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (user) {
+    await supabase.from("user_data").delete().eq("user_id", user.id);
+    const { error } = await supabase.auth.admin.deleteUser(user.id);
+    if (error) {
+      showToast("Error deleting account.");
+      console.error(error);
+      return;
+    }
+    showToast("Account deleted. Goodbye!");
+    setTimeout(() => {
+      window.location.href = "login.html";
+    }, 1500);
+  }
+}
+
+// Initialize all event listeners and app state
+document.addEventListener("DOMContentLoaded", () => {
+  console.log("Initializing app...");
+
+  // Initialize localStorage defaults
+  if (!localStorage.getItem("currentSprite")) {
+    localStorage.setItem("currentSprite", "Idle_1");
+  }
+
+  // Initialize UI elements
+  initSprite();
+  showList();
+  updateGamificationUI();
+  renderSidebar();
+
+  // Add event listeners
+  const backToCurrentBtn = document.getElementById("back-to-current");
+  if (backToCurrentBtn) {
+    backToCurrentBtn.addEventListener("click", function () {
+      showList();
+      document.getElementById("input-row").style.display = "flex";
+      document.getElementById("back-to-current").style.display = "none";
+    });
+  }
+
+  const clearStorageBtn = document.getElementById("clear-storage-btn");
+  if (clearStorageBtn) {
+    clearStorageBtn.addEventListener("click", clearAllData);
+  }
+
+  const deleteAccountBtn = document.getElementById("delete-account-btn");
+  if (deleteAccountBtn) {
+    deleteAccountBtn.addEventListener("click", deleteAccount);
+  }
+
+  // Add list item click handler
+  if (listContainer) {
+    listContainer.addEventListener("click", function (e) {
+      if (e.target.tagName === "LI") {
+        if (e.target.classList.contains("checked")) {
+          // Unchecking: animate reverse
+          e.target.classList.remove("checked");
+          e.target.classList.add("unchecking");
+          setTimeout(() => {
+            e.target.classList.remove("unchecking");
+          }, 400);
+        } else {
+          e.target.classList.add("checked");
+          // XP modifier based on difficulty and level
+          let diffSpan = e.target.querySelector(".difficulty");
+          let difficulty = diffSpan
+            ? diffSpan.classList.contains("hard")
+              ? "hard"
+              : diffSpan.classList.contains("medium")
+              ? "medium"
+              : "easy"
+            : "easy";
+          let multiplier = 1;
+          if (difficulty === "medium") multiplier = 1.5;
+          if (difficulty === "hard") multiplier = 2;
+          let xpMod = Math.round(
+            baseTaskXP * multiplier * (1 + (level - 1) * 0.1)
+          );
+          addXP(xpMod);
+        }
+        saveTasks();
+        saveUserData();
+      } else if (e.target.tagName === "SPAN") {
+        e.target.parentElement.remove();
+        saveTasks();
+        saveUserData();
+      }
+    });
+  }
+
+  // Add input box enter key handler
+  if (inputBox) {
+    inputBox.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") addTask();
+    });
+  }
+
+  // Add difficulty selector handler
+  const difficultySelect = document.getElementById("difficulty-select");
+  if (difficultySelect) {
+    difficultySelect.addEventListener("change", function () {
+      saveUserData();
+    });
+  }
+
+  // Initialize auth state
+  checkAuth();
+
+  // Add logout button handler
+  const logoutBtn = document.getElementById("logout-button");
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", handleLogout);
+  }
 });
 
 // Load user data from Supabase
@@ -304,62 +517,45 @@ async function checkAuth() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
   if (user) {
-    // User is signed in
-    userInfo.style.display = "block";
-    username.textContent =
-      user.user_metadata.username || user.email.split("@")[0];
-    authButtons.style.display = "none";
-    logoutButton.style.display = "block";
-    if (profileLink) profileLink.style.display = "inline-block";
+    // User is logged in
+    if (userInfo) userInfo.style.display = "flex";
+    if (authButtons) authButtons.style.display = "none";
+    if (username) username.textContent = user.email;
+
     // Load user data
     await loadUserData();
   } else {
-    // User is not signed in
-    userInfo.style.display = "none";
-    authButtons.style.display = "flex";
-    logoutButton.style.display = "none";
-    if (profileLink) profileLink.style.display = "none";
-    // Clear data
-    xp = 0;
-    level = 1;
-    currentSprite = "Idle_1";
-    listContainer.innerHTML = "";
-    updateGamificationUI();
-    updateSpriteAnimation(currentSprite);
+    // User is not logged in
+    if (userInfo) userInfo.style.display = "none";
+    if (authButtons) authButtons.style.display = "flex";
+
+    // Redirect to login if not on auth pages
+    const currentPage = window.location.pathname;
+    if (
+      !currentPage.includes("login.html") &&
+      !currentPage.includes("signup.html")
+    ) {
+      window.location.href = "login.html";
+    }
   }
 }
 
 // Handle logout
 async function handleLogout() {
   const { error } = await supabase.auth.signOut();
-  if (!error) {
-    window.location.reload();
+  if (error) {
+    showToast("Error logging out");
+    console.error(error);
+    return;
   }
-}
 
-// Check auth state on page load
-checkAuth();
+  // Clear local data
+  localStorage.clear();
 
-//////////////////////////////////////////////////////////////////
-
-const baseXP = 100; // base XP
-const baseTaskXP = 20; // base XP for easy task
-
-function getCompletedTasks() {
-  const tasks = [];
-  listContainer.querySelectorAll("li.checked").forEach((li) => {
-    tasks.push({
-      text: li.childNodes[1]?.textContent.trim() || "",
-      checked: true,
-      difficulty: li.querySelector(".difficulty")?.classList[1] || "easy",
-    });
-  });
-  return tasks;
-}
-function removeCompletedTasks() {
-  listContainer.querySelectorAll("li.checked").forEach((li) => li.remove());
-  saveUserData();
+  // Redirect to login
+  window.location.href = "login.html";
 }
 
 function handleLevelUp() {
@@ -394,162 +590,18 @@ function renderSidebar() {
     });
 }
 
-function showLevelHistory(level) {
-  const tasks = getTasksForLevel(level);
-  listContainer.innerHTML = "";
-  tasks.forEach((task) => {
-    let li = document.createElement("li");
-    li.innerHTML = `<span class="difficulty ${
-      task.difficulty || "easy"
-    }"></span> ${task.text}`;
-    if (task.checked) li.classList.add("checked");
-    li.style.pointerEvents = "none";
-    li.style.opacity = "0.7";
-    listContainer.appendChild(li);
+function getCompletedTasks() {
+  const tasks = [];
+  listContainer.querySelectorAll("li.checked").forEach((li) => {
+    tasks.push({
+      text: li.childNodes[1]?.textContent.trim() || "",
+      checked: true,
+      difficulty: li.querySelector(".difficulty")?.classList[1] || "easy",
+    });
   });
-  document.getElementById("input-row").style.display = "none";
-  document.getElementById("back-to-current").style.display = "block";
+  return tasks;
 }
-
-function getTasksForLevel(level) {
-  let allLevels = JSON.parse(localStorage.getItem("allLevels")) || {};
-  return allLevels[level]?.tasks || [];
+function removeCompletedTasks() {
+  listContainer.querySelectorAll("li.checked").forEach((li) => li.remove());
+  saveUserData();
 }
-
-document
-  .getElementById("back-to-current")
-  .addEventListener("click", function () {
-    showList();
-    document.getElementById("input-row").style.display = "flex";
-    document.getElementById("back-to-current").style.display = "none";
-  });
-
-document
-  .getElementById("clear-storage-btn")
-  .addEventListener("click", function () {
-    showClearConfirmToast();
-  });
-
-function showClearConfirmToast() {
-  const toast = document.getElementById("toast");
-  toast.innerHTML = `
-    <div style="display:flex;flex-direction:column;align-items:center;gap:20px;">
-      <span style="font-size:16px;letter-spacing:0.02em;">Clear all data?</span>
-      <div style="display:flex;gap:12px;">
-        <button id="confirm-clear-btn" style="
-          background: #d32f2f;
-          color: #fff;
-          border: none;
-          border-radius: 999px;
-          padding: 8px 24px;
-          font-size: 15px;
-          cursor: pointer;
-          font-weight: 500;
-          box-shadow: 0 1px 4px rgba(0,0,0,0.04);
-          transition: background 0.2s;
-        ">Confirm</button>
-        <button id="cancel-clear-btn" style="
-          background: #f5f5f5;
-          color: #222;
-          border: none;
-          border-radius: 999px;
-          padding: 8px 24px;
-          font-size: 15px;
-          cursor: pointer;
-          font-weight: 500;
-          box-shadow: 0 1px 4px rgba(0,0,0,0.04);
-          transition: background 0.2s, color 0.2s;
-        ">Cancel</button>
-      </div>
-    </div>
-  `;
-  toast.className = "toast show";
-  const hideTimeout = setTimeout(() => {
-    toast.className = "toast";
-    toast.innerHTML = "";
-  }, 4000);
-
-  document.getElementById("confirm-clear-btn").onclick = function () {
-    clearTimeout(hideTimeout);
-    localStorage.clear();
-    location.reload();
-  };
-  document.getElementById("cancel-clear-btn").onclick = function () {
-    clearTimeout(hideTimeout);
-    toast.className = "toast";
-    toast.innerHTML = "";
-  };
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-  console.log("Initializing app...");
-  if (!localStorage.getItem("currentSprite")) {
-    localStorage.setItem("currentSprite", "Idle_1");
-  }
-  initSprite();
-  showList();
-  updateGamificationUI();
-  renderSidebar();
-});
-
-async function clearAllData() {
-  localStorage.clear();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (user) {
-    const { error } = await supabase
-      .from("user_data")
-      .delete()
-      .eq("user_id", user.id);
-    if (error) {
-      showToast("Error clearing account data.");
-      console.error(error);
-      return;
-    }
-  }
-
-  xp = 0;
-  level = 1;
-  currentSprite = "Idle_1";
-  listContainer.innerHTML = "";
-  updateGamificationUI();
-  updateSpriteAnimation(currentSprite);
-  showToast("All data cleared!");
-}
-
-document
-  .getElementById("clear-storage-btn")
-  .addEventListener("click", clearAllData);
-
-// Delete user account and all their data
-async function deleteAccount() {
-  if (
-    !confirm(
-      "Are you sure you want to delete your account? This cannot be undone!"
-    )
-  )
-    return;
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (user) {
-    await supabase.from("user_data").delete().eq("user_id", user.id);
-    const { error } = await supabase.auth.admin.deleteUser(user.id);
-    if (error) {
-      showToast("Error deleting account.");
-      console.error(error);
-      return;
-    }
-    showToast("Account deleted. Goodbye!");
-    setTimeout(() => {
-      window.location.href = "login.html";
-    }, 1500);
-  }
-}
-
-document
-  .getElementById("delete-account-btn")
-  .addEventListener("click", deleteAccount);
