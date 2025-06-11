@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sign Up - XP List</title>
+    <link rel="stylesheet" href="css/auth.css?v=1.7" />
+    <link rel="icon" type="image/png" href="images/favicon.png" />
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="nav-brand">
+        <a href="index.html">XP List</a>
+      </div>
+      <div class="nav-center">
+        <a href="index.html" class="home-icon"></a>
+      </div>
+      <div class="nav-buttons">
+        <button onclick="window.location.href='signup.html';">Signup</button>
+        <button onclick="window.location.href='login.html';">Login</button>
+      </div>
+    </nav>
+    <div class="auth-container">
+      <h2>Sign Up</h2>
+      <form id="signup-form" class="auth-form">
+        <input type="text" id="username" placeholder="Username" required />
+        <input type="email" id="email" placeholder="Email" required />
+        <input type="password" id="password" placeholder="Password" required />
+        <input
+          type="password"
+          id="confirm-password"
+          placeholder="Confirm Password"
+          required
+        />
+        <button type="submit">Sign Up</button>
+      </form>
+      <div class="auth-links">
+        <p>Already have an account? <a href="login.html">Login</a></p>
+      </div>
+      <div id="error-message" class="error-message"></div>
+    </div>
+
+    <script src="env.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script type="module" src="js/auth.js?v=1.7"></script>
+  </body>
+</html>
