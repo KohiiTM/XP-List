@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Profile - XP To-List App</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/png" href="images/favicon.png" />
+    <link rel="stylesheet" href="css/style.css?v=1.7" />
+    <link rel="stylesheet" href="css/auth.css?v=1.7" />
+    <style>
+      .profile-container {
+        max-width: 400px;
+        margin: 40px auto;
+        background: rgba(30, 30, 30, 0.95);
+        border-radius: 12px;
+        padding: 32px 24px 24px 24px;
+        box-shadow: 0 4px 24px #000a;
+        color: #ffd700;
+      }
+      .profile-container h2 {
+        margin-bottom: 24px;
+        color: #ffd700;
+        text-align: center;
+      }
+      .profile-form label {
+        color: #ffd700;
+        font-weight: bold;
+        margin-bottom: 8px;
+        display: block;
+      }
+      .profile-form input[type="text"] {
+        width: 100%;
+        padding: 8px;
+        margin-bottom: 16px;
+        border-radius: 4px;
+        border: 1px solid #ffd70044;
+        background: #222;
+        color: #ffd700;
+      }
+      .profile-form button {
+        width: 100%;
+        padding: 10px;
+        background: #ffd700;
+        color: #222;
+        border: none;
+        border-radius: 4px;
+        font-weight: bold;
+        cursor: pointer;
+        margin-bottom: 16px;
+      }
+      .profile-form button.delete {
+        background: #b22222;
+        color: #fff;
+        margin-top: 8px;
+      }
+      .profile-nav {
+        text-align: center;
+        margin-bottom: 24px;
+      }
+      .profile-nav a {
+        color: #ffd700;
+        text-decoration: underline;
+        font-size: 1.1em;
+      }
+      .profile-message {
+        text-align: center;
+        margin-bottom: 16px;
+        color: #ffd700;
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="nav-brand">
+        <a href="index.html">XP List</a>
+      </div>
+    </nav>
+    <div class="profile-container">
+      <div class="profile-nav">
+        <a href="index.html">&larr; Back to Main</a>
+      </div>
+      <h2>Profile Settings</h2>
+      <div class="profile-message" id="profile-message"></div>
+      <form class="profile-form" id="username-form">
+        <label for="new-username">Change Username</label>
+        <input
+          type="text"
+          id="new-username"
+          placeholder="New Username"
+          required
+        />
+        <button type="submit">Update Username</button>
+      </form>
+      <button class="delete" id="delete-account-btn">Delete Account</button>
+    </div>
+    <script src="env.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="js/profile.js?v=1.7"></script>
+  </body>
+</html>
