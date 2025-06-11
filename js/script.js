@@ -520,7 +520,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       updateGamificationUI();
       updateSpriteAnimation(currentSprite);
 
-      // Update UI elements
       if (userInfo) userInfo.style.display = "none";
       if (authButtons) authButtons.style.display = "flex";
       if (logoutButton) logoutButton.style.display = "none";
@@ -528,65 +527,213 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 });
 
-// Load user data from Supabase
 async function loadUserData() {
-  if (!supabase) return;
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return;
-
-  const { data, error } = await supabase
-    .from("user_data")
-    .select("*")
-    .eq("user_id", user.id)
-    .single();
-
-  if (error) {
-    console.error("Error loading user data:", error);
+  if (!supabase) {
+    console.error("Supabase client not initialized in loadUserData");
     return;
   }
 
-  if (data) {
-    xp = data.xp || 0;
-    level = data.level || 1;
-    currentSprite = data.current_sprite || "Idle_1";
-    if (data.all_levels) {
-      allLevels = JSON.parse(data.all_levels);
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      console.error("No user found in loadUserData");
+      return;
+    }
+
+    console.log("Loading data for user:", user.id);
+
+    // Check if we have any local data
+    const hasLocalData =
+      localStorage.getItem("tasks") ||
+      localStorage.getItem("xp") ||
+      localStorage.getItem("level") ||
+      localStorage.getItem("allLevels");
+
+    if (hasLocalData) {
+      // If we have local data, save it to Supabase to override any existing data
+      const currentState = {
+        user_id: user.id,
+        tasks: JSON.stringify(getCurrentTasks()),
+        current_sprite: currentSprite || "Idle_1",
+        xp: parseInt(xp) || 0,
+        level: parseInt(level) || 1,
+        all_levels: JSON.stringify(allLevels || {}),
+      };
+
+      console.log("Saving current state to Supabase:", currentState);
+
+      const { error: saveError } = await supabase
+        .from("user_data")
+        .upsert(currentState, {
+          onConflict: "user_id",
+          returning: "minimal",
+        });
+
+      if (saveError) {
+        console.error("Error saving current state:", saveError);
+        showToast(`Error saving data: ${saveError.message}`, "error");
+        return;
+      }
+    } else {
+      // If no local data, load from Supabase
+      const { data, error } = await supabase
+        .from("user_data")
+        .select("*")
+        .eq("user_id", user.id)
+        .single();
+
+      if (error) {
+        console.error("Error loading user data:", error);
+        showToast(`Error loading data: ${error.message}`, "error");
+        return;
+      }
+
+      console.log("Loaded user data from Supabase:", data);
+
+      if (data) {
+        // Update local state with Supabase data
+        xp = parseInt(data.xp) || 0;
+        level = parseInt(data.level) || 1;
+        currentSprite = data.current_sprite || "Idle_1";
+
+        // Load all_levels from Supabase
+        if (data.all_levels) {
+          try {
+            allLevels = JSON.parse(data.all_levels);
+            console.log(
+              "Successfully parsed all_levels from Supabase:",
+              allLevels
+            );
+            // Save to localStorage as backup
+            localStorage.setItem("allLevels", data.all_levels);
+          } catch (e) {
+            console.error("Error parsing all_levels from Supabase:", e);
+            allLevels = {};
+          }
+        } else {
+          console.log("No all_levels data found in Supabase");
+          allLevels = {};
+        }
+
+        // Load tasks from Supabase
+        if (data.tasks) {
+          try {
+            const tasks = JSON.parse(data.tasks);
+            console.log("Successfully parsed tasks:", tasks);
+            listContainer.innerHTML = "";
+            tasks.forEach((task) => {
+              let li = document.createElement("li");
+              li.innerHTML = `<span class="difficulty ${task.difficulty}"></span> ${task.text}`;
+              if (task.checked) li.classList.add("checked");
+              let span = document.createElement("span");
+              span.innerHTML = "\u00d7";
+              li.appendChild(span);
+              listContainer.appendChild(li);
+            });
+          } catch (e) {
+            console.error("Error parsing tasks:", e);
+            showToast("Error loading tasks", "error");
+          }
+        }
+
+        // Save to localStorage for future use
+        localStorage.setItem("tasks", data.tasks || "[]");
+        localStorage.setItem("xp", xp);
+        localStorage.setItem("level", level);
+      }
     }
 
     // Update UI
     updateGamificationUI();
     updateSpriteAnimation(currentSprite);
     renderSidebar();
-
-    // Load tasks
-    if (data.tasks) {
-      const tasks = JSON.parse(data.tasks);
-      listContainer.innerHTML = "";
-      tasks.forEach((task) => {
-        let li = document.createElement("li");
-        li.innerHTML = `<span class="difficulty ${task.difficulty}"></span> ${task.text}`;
-        if (task.checked) li.classList.add("checked");
-        let span = document.createElement("span");
-        span.innerHTML = "\u00d7";
-        li.appendChild(span);
-        listContainer.appendChild(li);
-      });
-    }
+  } catch (error) {
+    console.error("Error in loadUserData:", error);
+    showToast(`Error loading data: ${error.message}`, "error");
   }
+}
+
+// Toast notification function
+function showToast(message, type = "info") {
+  const toast = document.createElement("div");
+  toast.className = `toast ${type}`;
+  toast.textContent = message;
+  document.body.appendChild(toast);
+
+  // Trigger animation
+  setTimeout(() => toast.classList.add("show"), 100);
+
+  // Remove after 3 seconds
+  setTimeout(() => {
+    toast.classList.remove("show");
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
 }
 
 // Save user data to Supabase
 async function saveUserData() {
-  if (!supabase) return;
+  if (!supabase) {
+    console.error("Supabase client not initialized in saveUserData");
+    return;
+  }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return;
+  try {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      console.log(
+        "No user found in saveUserData - saving to localStorage only"
+      );
+      // Save to localStorage only if no user
+      localStorage.setItem("tasks", JSON.stringify(getCurrentTasks()));
+      localStorage.setItem("xp", xp);
+      localStorage.setItem("level", level);
+      localStorage.setItem("allLevels", JSON.stringify(allLevels));
+      return;
+    }
 
+    console.log("Saving data for user:", user.id);
+    console.log("Current allLevels state:", allLevels);
+
+    const tasks = getCurrentTasks();
+
+    // Save only the fields that exist in the table
+    const dataToSave = {
+      user_id: user.id,
+      tasks: JSON.stringify(tasks),
+      current_sprite: currentSprite || "Idle_1",
+      xp: parseInt(xp) || 0,
+      level: parseInt(level) || 1,
+    };
+
+    console.log("Saving data to Supabase:", dataToSave);
+
+    // Save the data
+    const { error } = await supabase.from("user_data").upsert(dataToSave, {
+      onConflict: "user_id",
+      returning: "minimal",
+    });
+
+    if (error) {
+      console.error("Error saving user data:", error);
+      showToast(`Error saving data: ${error.message}`, "error");
+    } else {
+      console.log("Successfully saved data to Supabase");
+    }
+
+    // Always save allLevels to localStorage as a backup
+    localStorage.setItem("allLevels", JSON.stringify(allLevels));
+  } catch (error) {
+    console.error("Error in saveUserData:", error);
+    showToast(`Error saving data: ${error.message}`, "error");
+  }
+}
+
+// Helper function to get current tasks
+function getCurrentTasks() {
   const tasks = [];
   listContainer.querySelectorAll("li").forEach((li) => {
     const diffSpan = li.querySelector(".difficulty");
@@ -599,19 +746,7 @@ async function saveUserData() {
       difficulty: diffSpan ? diffSpan.classList[1] : "easy",
     });
   });
-
-  const { error } = await supabase.from("user_data").upsert({
-    user_id: user.id,
-    tasks: JSON.stringify(tasks),
-    current_sprite: currentSprite,
-    xp: xp,
-    level: level,
-    all_levels: JSON.stringify(allLevels),
-  });
-
-  if (error) {
-    console.error("Error saving user data:", error);
-  }
+  return tasks;
 }
 
 async function checkAuth() {
@@ -708,50 +843,109 @@ async function handleLogout() {
 }
 
 function handleLevelUp() {
-  saveAllTasks(level - 1, getCompletedTasks());
-  removeCompletedTasks();
-  renderSidebar();
-}
+  console.log("Handling level up...");
+  console.log("Current level:", level);
+  console.log("Current allLevels:", allLevels);
 
-function saveAllTasks(level, tasks) {
-  let allLevels = JSON.parse(localStorage.getItem("allLevels")) || {};
-  allLevels[level] = {
-    tasks: tasks,
-    completedDate: new Date().toISOString(),
-  };
-  localStorage.setItem("allLevels", JSON.stringify(allLevels));
+  // Get all completed tasks from the current list
+  const completedTasks = [];
+  listContainer.querySelectorAll("li").forEach((li) => {
+    if (li.classList.contains("checked")) {
+      const diffSpan = li.querySelector(".difficulty");
+      completedTasks.push({
+        text: li.textContent
+          .replace(diffSpan ? diffSpan.textContent : "", "")
+          .replace("×", "")
+          .trim(),
+        checked: true,
+        difficulty: diffSpan ? diffSpan.classList[1] : "easy",
+      });
+    }
+  });
 
-  if (supabase) {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) {
-        supabase
-          .from("user_data")
-          .upsert({
-            user_id: user.id,
-            all_levels: JSON.stringify(allLevels),
-          })
-          .then(({ error }) => {
-            if (error) {
-              console.error("Error saving level history:", error);
-            }
-          });
-      }
-    });
+  console.log("Completed tasks:", completedTasks);
+
+  // Only save if there are completed tasks
+  if (completedTasks.length > 0) {
+    // Save the completed tasks to allLevels
+    allLevels[level - 1] = {
+      tasks: completedTasks,
+      completedDate: new Date().toISOString(),
+    };
+
+    console.log("Updated allLevels:", allLevels);
+
+    // Save to localStorage
+    localStorage.setItem("allLevels", JSON.stringify(allLevels));
+    console.log("Saved to localStorage");
+
+    // Save to Supabase if logged in
+    if (supabase) {
+      supabase.auth.getUser().then(({ data: { user } }) => {
+        if (user) {
+          console.log("Saving to Supabase for user:", user.id);
+          // Save the complete user data
+          supabase
+            .from("user_data")
+            .upsert({
+              user_id: user.id,
+              tasks: JSON.stringify(getCurrentTasks()),
+              current_sprite: currentSprite || "Idle_1",
+              xp: parseInt(xp) || 0,
+              level: parseInt(level) || 1,
+              all_levels: JSON.stringify(allLevels),
+            })
+            .then(({ error }) => {
+              if (error) {
+                console.error("Error saving level history:", error);
+              } else {
+                console.log("Successfully saved to Supabase");
+              }
+            });
+        }
+      });
+    }
+
+    // Remove completed tasks from current list
+    removeCompletedTasks();
+    console.log("Removed completed tasks");
+
+    // Render the sidebar to show the new level
+    renderSidebar();
+  } else {
+    console.log("No completed tasks to save");
   }
 }
 
 function renderSidebar() {
   const levelTabs = document.getElementById("level-tabs");
-  if (!levelTabs) return;
+  if (!levelTabs) {
+    console.error("Level tabs element not found!");
+    return;
+  }
 
-  // Get allLevels from the current state
+  console.log("Rendering sidebar with levels:", allLevels);
+
+  // Clear existing tabs
   levelTabs.innerHTML = "";
 
   // Sort levels in descending order
   const sortedLevels = Object.keys(allLevels).sort((a, b) => b - a);
+  console.log("Sorted levels for sidebar:", sortedLevels);
+
+  if (sortedLevels.length === 0) {
+    console.log("No levels to display");
+    const noLevels = document.createElement("div");
+    noLevels.className = "no-levels";
+    noLevels.textContent = "No completed levels yet";
+    levelTabs.appendChild(noLevels);
+    return;
+  }
 
   sortedLevels.forEach((level) => {
     const levelData = allLevels[level];
+    console.log(`Creating tab for level ${level}:`, levelData);
+
     const tab = document.createElement("div");
     tab.className = "level-tab";
     tab.innerHTML = `
@@ -760,22 +954,15 @@ function renderSidebar() {
         levelData.completedDate
       ).toLocaleDateString()}</span>
     `;
-    tab.onclick = () => showLevelHistory(level);
+
+    tab.addEventListener("click", () => {
+      showLevelHistory(level);
+    });
+
     levelTabs.appendChild(tab);
   });
 }
 
-function getCompletedTasks() {
-  const tasks = [];
-  listContainer.querySelectorAll("li.checked").forEach((li) => {
-    tasks.push({
-      text: li.childNodes[1]?.textContent.trim() || "",
-      checked: true,
-      difficulty: li.querySelector(".difficulty")?.classList[1] || "easy",
-    });
-  });
-  return tasks;
-}
 function removeCompletedTasks() {
   listContainer.querySelectorAll("li.checked").forEach((li) => li.remove());
   saveUserData();
