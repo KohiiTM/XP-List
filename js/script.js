@@ -522,6 +522,7 @@ async function checkAuth() {
     // User is logged in
     if (userInfo) userInfo.style.display = "flex";
     if (authButtons) authButtons.style.display = "none";
+    if (logoutButton) logoutButton.style.display = "block";
     if (username) {
       // Try to get username from metadata, fallback to email
       const displayName =
@@ -535,6 +536,7 @@ async function checkAuth() {
     // User is not logged in
     if (userInfo) userInfo.style.display = "none";
     if (authButtons) authButtons.style.display = "flex";
+    if (logoutButton) logoutButton.style.display = "none";
 
     // Redirect to login if not on auth pages
     const currentPage = window.location.pathname;
