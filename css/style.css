@@ -64,7 +64,7 @@ body {
       rgba(255, 255, 255, 0.1) 2px,
       rgba(255, 255, 255, 0.1) 4px
     );
-  animation: fadeInGlow 2s ease-out;
+  animation: fadeInGlow 1.5s ease-out;
 }
 
 .container::before {
@@ -83,7 +83,7 @@ body {
     transparent 100%
   );
   background-size: 200% 100%;
-  animation: shimmer 5s ease-out forwards;
+  animation: shimmer 1.5s ease-out forwards;
   pointer-events: none;
   z-index: 1;
 }
@@ -511,25 +511,34 @@ ul li span:hover {
 }
 
 .level-tab {
-  background: #3a2f4c;
-  border: 2px solid #8b7b9e;
-  border-radius: 8px;
-  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
   padding: 8px 12px;
+  margin: 4px 0;
+  background: #2c2137;
+  border: 2px solid #ffd700;
+  border-radius: 8px;
   cursor: pointer;
-  width: 90%;
-  text-align: center;
-  font-size: 14px;
   transition: all 0.2s ease;
-  color: #ffd700;
-  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3);
-  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.2);
+  width: 100%;
 }
 
 .level-tab:hover {
-  background: #8b7b9e;
-  transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.2);
+  background: #3a2f4c;
+  transform: translateX(4px);
+}
+
+.level-number {
+  color: #ffd700;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.level-date {
+  color: #e0e0e0;
+  font-size: 10px;
+  opacity: 0.8;
 }
 
 .level-tab.active {

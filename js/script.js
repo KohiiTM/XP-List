@@ -720,23 +720,49 @@ function saveAllTasks(level, tasks) {
     completedDate: new Date().toISOString(),
   };
   localStorage.setItem("allLevels", JSON.stringify(allLevels));
+
+  if (supabase) {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        supabase
+          .from("user_data")
+          .upsert({
+            user_id: user.id,
+            all_levels: JSON.stringify(allLevels),
+          })
+          .then(({ error }) => {
+            if (error) {
+              console.error("Error saving level history:", error);
+            }
+          });
+      }
+    });
+  }
 }
 
 function renderSidebar() {
   const levelTabs = document.getElementById("level-tabs");
-  let allLevels = JSON.parse(localStorage.getItem("allLevels")) || {};
-  levelTabs.innerHTML = ""; // Only clear the level tabs, not the entire sidebar
+  if (!levelTabs) return;
 
-  Object.entries(allLevels)
-    .sort((a, b) => new Date(b[1].completedDate) - new Date(a[1].completedDate))
-    .forEach(([lvl, data]) => {
-      const btn = document.createElement("button");
-      btn.className = "level-tab";
-      const date = new Date(data.completedDate);
-      btn.textContent = date.toLocaleDateString();
-      btn.onclick = () => showLevelHistory(lvl);
-      levelTabs.appendChild(btn);
-    });
+  // Get allLevels from the current state
+  levelTabs.innerHTML = "";
+
+  // Sort levels in descending order
+  const sortedLevels = Object.keys(allLevels).sort((a, b) => b - a);
+
+  sortedLevels.forEach((level) => {
+    const levelData = allLevels[level];
+    const tab = document.createElement("div");
+    tab.className = "level-tab";
+    tab.innerHTML = `
+      <span class="level-number">Level ${level}</span>
+      <span class="level-date">${new Date(
+        levelData.completedDate
+      ).toLocaleDateString()}</span>
+    `;
+    tab.onclick = () => showLevelHistory(level);
+    levelTabs.appendChild(tab);
+  });
 }
 
 function getCompletedTasks() {
