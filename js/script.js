@@ -544,108 +544,103 @@ async function loadUserData() {
 
     console.log("Loading data for user:", user.id);
 
-    // Check if we have any local data
-    const hasLocalData =
-      localStorage.getItem("tasks") ||
-      localStorage.getItem("xp") ||
-      localStorage.getItem("level") ||
-      localStorage.getItem("allLevels");
+    // First try to load from Supabase
+    const { data, error } = await supabase
+      .from("user_data")
+      .select("*")
+      .eq("user_id", user.id)
+      .single();
 
-    if (hasLocalData) {
-      // If we have local data, save it to Supabase to override any existing data
-      const currentState = {
-        user_id: user.id,
-        tasks: JSON.stringify(getCurrentTasks()),
-        current_sprite: currentSprite || "Idle_1",
-        xp: parseInt(xp) || 0,
-        level: parseInt(level) || 1,
-        all_levels: JSON.stringify(allLevels || {}),
-      };
+    if (error) {
+      console.error("Error loading user data:", error);
+      showToast(`Error loading data: ${error.message}`, "error");
+      return;
+    }
 
-      console.log("Saving current state to Supabase:", currentState);
+    console.log("Loaded user data from Supabase:", data);
 
-      const { error: saveError } = await supabase
-        .from("user_data")
-        .upsert(currentState, {
-          onConflict: "user_id",
-          returning: "minimal",
-        });
+    if (data) {
+      // Update local state with Supabase data
+      xp = parseInt(data.xp) || 0;
+      level = parseInt(data.level) || 1;
+      currentSprite = data.current_sprite || "Idle_1";
 
-      if (saveError) {
-        console.error("Error saving current state:", saveError);
-        showToast(`Error saving data: ${saveError.message}`, "error");
-        return;
-      }
-    } else {
-      // If no local data, load from Supabase
-      const { data, error } = await supabase
-        .from("user_data")
-        .select("*")
-        .eq("user_id", user.id)
-        .single();
-
-      if (error) {
-        console.error("Error loading user data:", error);
-        showToast(`Error loading data: ${error.message}`, "error");
-        return;
-      }
-
-      console.log("Loaded user data from Supabase:", data);
-
-      if (data) {
-        // Update local state with Supabase data
-        xp = parseInt(data.xp) || 0;
-        level = parseInt(data.level) || 1;
-        currentSprite = data.current_sprite || "Idle_1";
-
-        // Load all_levels from Supabase
-        if (data.all_levels) {
-          try {
-            allLevels = JSON.parse(data.all_levels);
-            console.log(
-              "Successfully parsed all_levels from Supabase:",
-              allLevels
-            );
-            // Save to localStorage as backup
-            localStorage.setItem("allLevels", data.all_levels);
-          } catch (e) {
-            console.error("Error parsing all_levels from Supabase:", e);
-            allLevels = {};
-          }
-        } else {
-          console.log("No all_levels data found in Supabase");
+      // Load all_levels from Supabase
+      if (data.all_levels) {
+        try {
+          allLevels = JSON.parse(data.all_levels);
+          console.log(
+            "Successfully parsed all_levels from Supabase:",
+            allLevels
+          );
+          // Save to localStorage as backup
+          localStorage.setItem("allLevels", data.all_levels);
+        } catch (e) {
+          console.error("Error parsing all_levels from Supabase:", e);
           allLevels = {};
         }
+      } else {
+        console.log("No all_levels data found in Supabase");
+        allLevels = {};
+      }
 
-        // Load tasks from Supabase
-        if (data.tasks) {
-          try {
-            const tasks = JSON.parse(data.tasks);
-            console.log("Successfully parsed tasks:", tasks);
-            listContainer.innerHTML = "";
-            tasks.forEach((task) => {
-              let li = document.createElement("li");
-              li.innerHTML = `<span class="difficulty ${task.difficulty}"></span> ${task.text}`;
-              if (task.checked) li.classList.add("checked");
-              let span = document.createElement("span");
-              span.innerHTML = "\u00d7";
-              li.appendChild(span);
-              listContainer.appendChild(li);
-            });
-          } catch (e) {
-            console.error("Error parsing tasks:", e);
-            showToast("Error loading tasks", "error");
-          }
+      // Load tasks from Supabase
+      if (data.tasks) {
+        try {
+          const tasks = JSON.parse(data.tasks);
+          console.log("Successfully parsed tasks:", tasks);
+          listContainer.innerHTML = "";
+          tasks.forEach((task) => {
+            let li = document.createElement("li");
+            li.innerHTML = `<span class="difficulty ${task.difficulty}"></span> ${task.text}`;
+            if (task.checked) li.classList.add("checked");
+            let span = document.createElement("span");
+            span.innerHTML = "\u00d7";
+            li.appendChild(span);
+            listContainer.appendChild(li);
+          });
+        } catch (e) {
+          console.error("Error parsing tasks:", e);
+          showToast("Error loading tasks", "error");
         }
+      }
 
-        // Save to localStorage for future use
-        localStorage.setItem("tasks", data.tasks || "[]");
-        localStorage.setItem("xp", xp);
-        localStorage.setItem("level", level);
+      localStorage.setItem("tasks", data.tasks || "[]");
+      localStorage.setItem("xp", xp);
+      localStorage.setItem("level", level);
+    } else {
+      const hasLocalData =
+        localStorage.getItem("tasks") ||
+        localStorage.getItem("xp") ||
+        localStorage.getItem("level") ||
+        localStorage.getItem("allLevels");
+
+      if (hasLocalData) {
+        const currentState = {
+          user_id: user.id,
+          tasks: JSON.stringify(getCurrentTasks()),
+          current_sprite: currentSprite || "Idle_1",
+          xp: parseInt(xp) || 0,
+          level: parseInt(level) || 1,
+          all_levels: JSON.stringify(allLevels || {}),
+        };
+
+        console.log("Saving local data to Supabase:", currentState);
+
+        const { error: saveError } = await supabase
+          .from("user_data")
+          .upsert(currentState, {
+            onConflict: "user_id",
+            returning: "minimal",
+          });
+
+        if (saveError) {
+          console.error("Error saving local data to Supabase:", saveError);
+          showToast(`Error saving data: ${saveError.message}`, "error");
+        }
       }
     }
 
-    // Update UI
     updateGamificationUI();
     updateSpriteAnimation(currentSprite);
     renderSidebar();
@@ -655,7 +650,6 @@ async function loadUserData() {
   }
 }
 
-// Toast notification function
 function showToast(message, type = "info") {
   const toast = document.createElement("div");
   toast.className = `toast ${type}`;
@@ -672,7 +666,6 @@ function showToast(message, type = "info") {
   }, 3000);
 }
 
-// Save user data to Supabase
 async function saveUserData() {
   if (!supabase) {
     console.error("Supabase client not initialized in saveUserData");
@@ -700,7 +693,6 @@ async function saveUserData() {
 
     const tasks = getCurrentTasks();
 
-    // Save only the fields that exist in the table
     const dataToSave = {
       user_id: user.id,
       tasks: JSON.stringify(tasks),
@@ -724,7 +716,6 @@ async function saveUserData() {
       console.log("Successfully saved data to Supabase");
     }
 
-    // Always save allLevels to localStorage as a backup
     localStorage.setItem("allLevels", JSON.stringify(allLevels));
   } catch (error) {
     console.error("Error in saveUserData:", error);
@@ -750,10 +741,8 @@ function getCurrentTasks() {
 }
 
 async function checkAuth() {
-  // Check if user is logged in
   const user = JSON.parse(localStorage.getItem("user"));
   if (user) {
-    // User is logged in
     if (userInfo) userInfo.style.display = "flex";
     if (authButtons) authButtons.style.display = "none";
     if (logoutButton) logoutButton.style.display = "block";
@@ -762,19 +751,15 @@ async function checkAuth() {
         user.user_metadata?.username || user.email?.split("@")[0] || "User";
       username.textContent = displayName;
     }
-    // Show profile link for logged in users
     const profileLink = document.getElementById("profile-link");
     if (profileLink) profileLink.style.display = "block";
 
-    // Load data from Supabase
     await loadUserData();
   } else {
-    // User is not logged in
     if (userInfo) userInfo.style.display = "none";
     if (authButtons) authButtons.style.display = "flex";
     if (logoutButton) logoutButton.style.display = "none";
 
-    // Only redirect to login if not on auth pages and not in local mode
     const currentPage = window.location.pathname;
     if (
       !currentPage.includes("login.html") &&
@@ -796,10 +781,8 @@ async function handleLogout() {
     return;
   }
 
-  // Clear local data
   localStorage.clear();
 
-  // Redirect to login
   window.location.href = "login.html";
 }
 
@@ -808,7 +791,6 @@ function handleLevelUp() {
   console.log("Current level:", level);
   console.log("Current allLevels:", allLevels);
 
-  // Get all completed tasks from the current list
   const completedTasks = [];
   listContainer.querySelectorAll("li").forEach((li) => {
     if (li.classList.contains("checked")) {
@@ -826,9 +808,7 @@ function handleLevelUp() {
 
   console.log("Completed tasks:", completedTasks);
 
-  // Only save if there are completed tasks
   if (completedTasks.length > 0) {
-    // Save the completed tasks to allLevels
     allLevels[level - 1] = {
       tasks: completedTasks,
       completedDate: new Date().toISOString(),
@@ -836,16 +816,13 @@ function handleLevelUp() {
 
     console.log("Updated allLevels:", allLevels);
 
-    // Save to localStorage
     localStorage.setItem("allLevels", JSON.stringify(allLevels));
     console.log("Saved to localStorage");
 
-    // Save to Supabase if logged in
     if (supabase) {
       supabase.auth.getUser().then(({ data: { user } }) => {
         if (user) {
           console.log("Saving to Supabase for user:", user.id);
-          // Save the complete user data
           supabase
             .from("user_data")
             .upsert({
@@ -867,11 +844,9 @@ function handleLevelUp() {
       });
     }
 
-    // Remove completed tasks from current list
     removeCompletedTasks();
     console.log("Removed completed tasks");
 
-    // Render the sidebar to show the new level
     renderSidebar();
   } else {
     console.log("No completed tasks to save");
