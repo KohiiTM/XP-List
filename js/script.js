@@ -15,8 +15,8 @@ const profileLink = document.getElementById("profile-link");
 
 // Initialize Supabase client
 const supabase = window.supabase.createClient(
-  window.env.SUPABASE_URL,
-  window.env.SUPABASE_ANON_KEY
+  "https://wasmcwusvjkoukofxzkg.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indhc21jd3Vzdmprb3Vrb2Z4emtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk1OTMxNTksImV4cCI6MjA2NTE2OTE1OX0.EUj0Rj288tzsq1ZZOu1KfA3QIzipvcfZDKvdGwDJUoc"
 );
 
 let xp = 0;
@@ -750,50 +750,8 @@ function getCurrentTasks() {
 }
 
 async function checkAuth() {
-  const isLocalMode =
-    !window.env.SUPABASE_URL ||
-    window.env.SUPABASE_URL === "YOUR_SUPABASE_URL" ||
-    !window.env.SUPABASE_ANON_KEY ||
-    window.env.SUPABASE_ANON_KEY === "YOUR_SUPABASE_ANON_KEY";
-
-  // If in local mode, show the app without auth
-  if (isLocalMode) {
-    if (userInfo) userInfo.style.display = "none";
-    if (authButtons) authButtons.style.display = "none"; // Hide auth buttons in local mode
-    if (logoutButton) logoutButton.style.display = "none";
-
-    // Load tasks from localStorage in local mode
-    const savedTasks = localStorage.getItem("tasks");
-    if (savedTasks) {
-      const tasks = JSON.parse(savedTasks);
-      listContainer.innerHTML = "";
-      tasks.forEach((task) => {
-        let li = document.createElement("li");
-        li.innerHTML = `<span class="difficulty ${task.difficulty}"></span> ${task.text}`;
-        if (task.checked) li.classList.add("checked");
-        let span = document.createElement("span");
-        span.innerHTML = "\u00d7";
-        li.appendChild(span);
-        listContainer.appendChild(li);
-      });
-    }
-
-    // Load XP and level from localStorage
-    const savedXP = localStorage.getItem("xp");
-    const savedLevel = localStorage.getItem("level");
-    if (savedXP) xp = parseInt(savedXP);
-    if (savedLevel) level = parseInt(savedLevel);
-    updateGamificationUI();
-
-    return;
-  }
-
-  if (!supabase) return;
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
+  // Check if user is logged in
+  const user = JSON.parse(localStorage.getItem("user"));
   if (user) {
     // User is logged in
     if (userInfo) userInfo.style.display = "flex";
@@ -804,8 +762,11 @@ async function checkAuth() {
         user.user_metadata?.username || user.email?.split("@")[0] || "User";
       username.textContent = displayName;
     }
+    // Show profile link for logged in users
+    const profileLink = document.getElementById("profile-link");
+    if (profileLink) profileLink.style.display = "block";
 
-    // Load user data
+    // Load data from Supabase
     await loadUserData();
   } else {
     // User is not logged in

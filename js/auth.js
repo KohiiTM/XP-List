@@ -3,8 +3,8 @@ document.addEventListener("DOMContentLoaded", () => {
   try {
     // Initialize Supabase client
     const supabase = window.supabase.createClient(
-      window.env.SUPABASE_URL,
-      window.env.SUPABASE_ANON_KEY
+      "https://wasmcwusvjkoukofxzkg.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indhc21jd3Vzdmprb3Vrb2Z4emtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk1OTMxNTksImV4cCI6MjA2NTE2OTE1OX0.EUj0Rj288tzsq1ZZOu1KfA3QIzipvcfZDKvdGwDJUoc"
     );
 
     const signupForm = document.getElementById("signup-form");
