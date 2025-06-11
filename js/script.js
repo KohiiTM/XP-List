@@ -13,10 +13,16 @@ const authButtons = document.getElementById("auth-buttons");
 const logoutButton = document.getElementById("logout-button");
 const profileLink = document.getElementById("profile-link");
 
-let supabase = null;
+// Initialize Supabase client
+const supabase = window.supabase.createClient(
+  window.env.SUPABASE_URL,
+  window.env.SUPABASE_ANON_KEY
+);
+
 let xp = 0;
 let level = 1;
 let currentSprite = "Idle_1";
+let allLevels = {};
 
 const sprites = ["Idle_1", "Idle_2", "Idle_3", "Idle_4"];
 
@@ -328,8 +334,58 @@ async function deleteAccount() {
 }
 
 // Initialize all event listeners and app state
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   console.log("Initializing app...");
+
+  // Check if user is logged in
+  const user = JSON.parse(localStorage.getItem("user"));
+  if (user) {
+    // User is logged in
+    if (userInfo) userInfo.style.display = "flex";
+    if (authButtons) authButtons.style.display = "none";
+    if (logoutButton) logoutButton.style.display = "block";
+    if (username) {
+      const displayName =
+        user.user_metadata?.username || user.email?.split("@")[0] || "User";
+      username.textContent = displayName;
+    }
+    // Show profile link for logged in users
+    const profileLink = document.getElementById("profile-link");
+    if (profileLink) profileLink.style.display = "block";
+
+    // Load data from Supabase
+    await loadUserData();
+  } else {
+    // User is not logged in
+    if (userInfo) userInfo.style.display = "none";
+    if (authButtons) authButtons.style.display = "flex";
+    if (logoutButton) logoutButton.style.display = "none";
+    // Hide profile link for non-logged in users
+    const profileLink = document.getElementById("profile-link");
+    if (profileLink) profileLink.style.display = "none";
+
+    // Load data from localStorage for non-logged in users
+    const savedTasks = localStorage.getItem("tasks");
+    if (savedTasks) {
+      const tasks = JSON.parse(savedTasks);
+      listContainer.innerHTML = "";
+      tasks.forEach((task) => {
+        let li = document.createElement("li");
+        li.innerHTML = `<span class="difficulty ${task.difficulty}"></span> ${task.text}`;
+        if (task.checked) li.classList.add("checked");
+        let span = document.createElement("span");
+        span.innerHTML = "\u00d7";
+        li.appendChild(span);
+        listContainer.appendChild(li);
+      });
+    }
+
+    const savedXP = localStorage.getItem("xp");
+    const savedLevel = localStorage.getItem("level");
+    if (savedXP) xp = parseInt(savedXP);
+    if (savedLevel) level = parseInt(savedLevel);
+    updateGamificationUI();
+  }
 
   // Initialize localStorage defaults
   if (!localStorage.getItem("currentSprite")) {
@@ -464,8 +520,10 @@ document.addEventListener("DOMContentLoaded", () => {
       updateGamificationUI();
       updateSpriteAnimation(currentSprite);
 
-      // Redirect to login page
-      window.location.href = "login.html";
+      // Update UI elements
+      if (userInfo) userInfo.style.display = "none";
+      if (authButtons) authButtons.style.display = "flex";
+      if (logoutButton) logoutButton.style.display = "none";
     });
   }
 });
@@ -494,10 +552,14 @@ async function loadUserData() {
     xp = data.xp || 0;
     level = data.level || 1;
     currentSprite = data.current_sprite || "Idle_1";
+    if (data.all_levels) {
+      allLevels = JSON.parse(data.all_levels);
+    }
 
     // Update UI
     updateGamificationUI();
     updateSpriteAnimation(currentSprite);
+    renderSidebar();
 
     // Load tasks
     if (data.tasks) {
@@ -544,6 +606,7 @@ async function saveUserData() {
     current_sprite: currentSprite,
     xp: xp,
     level: level,
+    all_levels: JSON.stringify(allLevels),
   });
 
   if (error) {

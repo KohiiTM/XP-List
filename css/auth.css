@@ -74,12 +74,19 @@ body {
   background: #2c2137;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
   font-size: 0;
+  width: 36px;
+  height: 36px;
 }
 
 .home-icon::before {
-  content: "🏰";
-  font-size: 20px;
-  text-shadow: 2px 2px 0 #000;
+  content: "";
+  width: 20px;
+  height: 20px;
+  background-image: url("../images/home-icon.svg");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  filter: drop-shadow(2px 2px 0 #000);
 }
 
 .home-icon:hover {

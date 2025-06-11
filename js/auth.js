@@ -57,7 +57,6 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
 
-    // Handle login
     if (loginForm) {
       loginForm.addEventListener("submit", async (e) => {
         e.preventDefault();
@@ -73,35 +72,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
           if (error) throw error;
 
-          // Store user data
           localStorage.setItem("user", JSON.stringify(data.user));
 
-          // Redirect to main page
           window.location.href = "index.html";
         } catch (error) {
           errorMessage.textContent = error.message;
         }
       });
     }
-
-    // Check if user is already logged in
-    async function checkUser() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user) {
-        // Only redirect if we're on auth pages
-        if (
-          window.location.pathname.includes("login.html") ||
-          window.location.pathname.includes("signup.html")
-        ) {
-          window.location.href = "index.html";
-        }
-      }
-    }
-
-    // Run check on page load
-    checkUser();
   } catch (error) {
     console.error("Error initializing Supabase client:", error);
   }

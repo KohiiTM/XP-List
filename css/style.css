@@ -1,5 +1,27 @@
 @import url("https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap");
 
+@keyframes fadeInGlow {
+  0% {
+    opacity: 0;
+    filter: brightness(0.8) blur(10px);
+  }
+  100% {
+    opacity: 1;
+    filter: brightness(1) blur(0);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% center;
+    opacity: 0.5;
+  }
+  100% {
+    background-position: 200% center;
+    opacity: 0;
+  }
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -42,6 +64,28 @@ body {
       rgba(255, 255, 255, 0.1) 2px,
       rgba(255, 255, 255, 0.1) 4px
     );
+  animation: fadeInGlow 2s ease-out;
+}
+
+.container::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 215, 0, 0.05) 25%,
+    rgba(255, 215, 0, 0.1) 50%,
+    rgba(255, 215, 0, 0.05) 75%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 5s ease-out forwards;
+  pointer-events: none;
+  z-index: 1;
 }
 
 .app-wrapper {
