@@ -1,62 +1,90 @@
-// Sprite configuration
-const SPRITE_ANIMATIONS = {
-  idle: {
-    src: "images/sprites/Idle_1.png",
-    frames: 6,
-    spriteWidth: 128,
-    spriteHeight: 128,
-    sheetWidth: 768,
-    sheetHeight: 128,
+// Character sprite configurations
+const CHARACTER_SPRITES = {
+  samurai: {
+    idle: {
+      src: "images/sprites/Idle_1.png",
+      frames: 6,
+      spriteWidth: 128,
+      spriteHeight: 128,
+      sheetWidth: 768,
+      sheetHeight: 128,
+    },
+    shield: {
+      src: "images/sprites/Shield.png",
+      frames: 6,
+      spriteWidth: 128,
+      spriteHeight: 128,
+      sheetWidth: 768,
+      sheetHeight: 128,
+    },
   },
-  idle2: {
-    src: "images/sprites/Idle_2.png",
-    frames: 6,
-    spriteWidth: 128,
-    spriteHeight: 128,
-    sheetWidth: 768,
-    sheetHeight: 128,
+  knight2: {
+    idle: {
+      src: "images/sprites/Idle_2.png",
+      frames: 6,
+      spriteWidth: 128,
+      spriteHeight: 128,
+      sheetWidth: 768,
+      sheetHeight: 128,
+    },
+    shield: {
+      src: "images/sprites/Shield.png",
+      frames: 6,
+      spriteWidth: 128,
+      spriteHeight: 128,
+      sheetWidth: 768,
+      sheetHeight: 128,
+    },
   },
-  idle3: {
-    src: "images/sprites/Idle_3.png",
-    frames: 5,
-    spriteWidth: 128,
-    spriteHeight: 128,
-    sheetWidth: 640,
-    sheetHeight: 128,
+  knight3: {
+    idle: {
+      src: "images/sprites/Idle_3.png",
+      frames: 5,
+      spriteWidth: 128,
+      spriteHeight: 128,
+      sheetWidth: 640,
+      sheetHeight: 128,
+    },
   },
-  idle4: {
-    src: "images/sprites/Idle_4.png",
-    frames: 6,
-    spriteWidth: 128,
-    spriteHeight: 128,
-    sheetWidth: 768,
-    sheetHeight: 128,
+  knight4: {
+    idle: {
+      src: "images/sprites/Idle_4.png",
+      frames: 6,
+      spriteWidth: 128,
+      spriteHeight: 128,
+      sheetWidth: 768,
+      sheetHeight: 128,
+    },
   },
+  // Add more characters here as needed
+  // wizard: {
+  //   idle: { ... },
+  //   cast: { ... },
 };
 
 class SpriteManager {
   constructor() {
-    this.currentSprite = localStorage.getItem("currentSprite") || "idle";
+    this.currentCharacter =
+      localStorage.getItem("currentCharacter") || "samurai";
+    this.currentAnimation = localStorage.getItem("currentAnimation") || "idle";
     this.canvas = null;
     this.ctx = null;
     this.gameFrame = 0;
-    this.slowAnim = 5; // Controls animation speed
+    this.slowAnim = 5;
     this.playerImage = new Image();
     this.isAnimating = false;
+    this.animationTimeout = null;
   }
 
   init() {
     console.log("Initializing sprite system...");
 
-    // Create sprite container
     const spriteContainer = document.createElement("div");
     spriteContainer.className = "sprite-container";
 
-    // Create sprite visual container
     const spriteVisual = document.createElement("div");
     spriteVisual.className = "sprite-visual";
 
-    // Create canvas element
     this.canvas = document.createElement("canvas");
     this.canvas.width = 130;
     this.canvas.height = 130;
@@ -64,36 +92,29 @@ class SpriteManager {
     this.canvas.className = "player-sprite";
     this.ctx = this.canvas.getContext("2d");
 
-    // Create change sprite button
     const changeSpriteBtn = document.createElement("button");
     changeSpriteBtn.id = "change-sprite";
     changeSpriteBtn.className = "sprite-btn";
     changeSpriteBtn.textContent = ">";
 
-    // Create leveling container
     const leveling = document.createElement("div");
     leveling.className = "leveling";
 
-    // Create level display
     const levelDisplay = document.createElement("span");
     levelDisplay.id = "level";
     levelDisplay.textContent = "Level: 1";
 
-    // Create XP bar container
     const xpBar = document.createElement("div");
     xpBar.className = "xp-bar";
 
-    // Create XP progress bar
     const xpProgress = document.createElement("div");
     xpProgress.id = "xp-progress";
 
-    // Create XP text
     const xpText = document.createElement("span");
     xpText.className = "xp-text";
     xpText.id = "xp";
     xpText.textContent = "XP: 0/100";
 
-    // Assemble the structure
     xpBar.appendChild(xpProgress);
     leveling.appendChild(levelDisplay);
     leveling.appendChild(xpBar);
@@ -104,7 +125,6 @@ class SpriteManager {
     spriteContainer.appendChild(changeSpriteBtn);
     spriteContainer.appendChild(leveling);
 
-    // Insert at the beginning of the todo-app
     const todoApp = document.querySelector(".todo-app");
     if (todoApp) {
       todoApp.insertBefore(spriteContainer, todoApp.firstChild);
@@ -113,27 +133,41 @@ class SpriteManager {
       console.error("Could not find .todo-app element");
     }
 
-    // Add event listener for sprite change
     changeSpriteBtn.addEventListener("click", () => this.changeSprite());
 
-    // Initialize the first sprite
+    // Add event listener for the add button
+    const addButton = document.querySelector('button[onclick="addTask()"]');
+    if (addButton) {
+      addButton.addEventListener("click", () => {
+        this.changeAnimation("shield");
+      });
+    }
+
     this.updateSprite();
   }
 
   updateSprite() {
-    console.log("Updating sprite to:", this.currentSprite);
-    const animationData = SPRITE_ANIMATIONS[this.currentSprite];
-    if (!animationData) {
-      console.error("No data found for sprite:", this.currentSprite);
+    console.log(
+      "Updating sprite to:",
+      this.currentCharacter,
+      this.currentAnimation
+    );
+    const characterData = CHARACTER_SPRITES[this.currentCharacter];
+    if (!characterData) {
+      console.error("No data found for character:", this.currentCharacter);
       return;
     }
 
-    // Stop current animation if running
+    const animationData = characterData[this.currentAnimation];
+    if (!animationData) {
+      console.error("No animation data found for:", this.currentAnimation);
+      return;
+    }
+
     if (this.isAnimating) {
       cancelAnimationFrame(this.animationId);
     }
 
-    // Load new sprite image
     this.playerImage.src = animationData.src;
     this.playerImage.onload = () => {
       this.startAnimation(animationData);
@@ -150,7 +184,6 @@ class SpriteManager {
       let frameX = animationData.spriteWidth * position;
       let frameY = 0;
 
-      // Center the sprite in the canvas
       const x = (this.canvas.width - animationData.spriteWidth) / 2;
       const y = (this.canvas.height - animationData.spriteHeight) / 2;
 
@@ -175,16 +208,43 @@ class SpriteManager {
 
   changeSprite() {
     console.log("Changing sprite...");
-    const spriteKeys = Object.keys(SPRITE_ANIMATIONS);
-    const currentIndex = spriteKeys.indexOf(this.currentSprite);
-    const nextIndex = (currentIndex + 1) % spriteKeys.length;
-    this.currentSprite = spriteKeys[nextIndex];
-    localStorage.setItem("currentSprite", this.currentSprite);
+    const characterKeys = Object.keys(CHARACTER_SPRITES);
+    const currentCharIndex = characterKeys.indexOf(this.currentCharacter);
+    const nextCharIndex = (currentCharIndex + 1) % characterKeys.length;
+    this.currentCharacter = characterKeys[nextCharIndex];
+
+    this.currentAnimation = Object.keys(
+      CHARACTER_SPRITES[this.currentCharacter]
+    )[0];
+
+    localStorage.setItem("currentCharacter", this.currentCharacter);
+    localStorage.setItem("currentAnimation", this.currentAnimation);
     this.updateSprite();
+  }
+
+  changeAnimation(animationName) {
+    if (!CHARACTER_SPRITES[this.currentCharacter][animationName]) {
+      console.error(
+        `Animation ${animationName} not found for character ${this.currentCharacter}`
+      );
+      return;
+    }
+
+    this.currentAnimation = animationName;
+    this.updateSprite();
+
+    // If it's not the idle animation, set a timeout to return to idle
+    if (animationName !== "idle") {
+      if (this.animationTimeout) {
+        clearTimeout(this.animationTimeout);
+      }
+      this.animationTimeout = setTimeout(() => {
+        this.changeAnimation("idle");
+      }, 1000); // Return to idle after 1 second
+    }
   }
 }
 
-// Initialize sprite manager when the DOM is loaded
 document.addEventListener("DOMContentLoaded", () => {
   const spriteManager = new SpriteManager();
   spriteManager.init();
